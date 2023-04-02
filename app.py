@@ -164,7 +164,12 @@ def update():
         p = Prediction.get(Prediction.admission_id == obs['admission_id'])
         p.actual_readmitted = obs['readmitted']
         p.save()
-        return jsonify(model_to_dict(p))
+        model_dict = model_to_dict(p)
+        model_response_dict = {}
+        model_response_dict["admission_id"] = model_dict["admission_id"]
+        model_response_dict["actual_readmitted"] = model_dict["actual_readmitted"]
+        model_response_dict["predicted_readmitted"] = model_dict["readmitted"]
+        return jsonify(model_response_dict)
     except Prediction.DoesNotExist:
         error_msg = 'Observation ID: "{}" does not exist'.format(obs['admission_id'])
         return jsonify({'error': error_msg})
