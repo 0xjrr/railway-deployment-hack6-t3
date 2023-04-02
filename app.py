@@ -135,23 +135,23 @@ def predict():
     obs_dict: dict = request.get_json()
     ########################################
     # tests
-    categories_ok, error = check_categorical_values(observation)
+    categories_ok, error = check_categorical_values(obs_dict)
     if not categories_ok:
         response = {'error': error}
         return jsonify(response)
-    cdp, error = check_discharge_disposition_code(observation)
+    cdp, error = check_discharge_disposition_code(obs_dict)
     if not cdp:
         response = {'error': error}
         return jsonify(response)
-    ctih, error = check_time_in_hospital(observation)
+    ctih, error = check_time_in_hospital(obs_dict)
     if not ctih:
         response = {'error': error}
         return jsonify(response)
-    cnlp, error = check_num_lab_procedures(observation)
+    cnlp, error = check_num_lab_procedures(obs_dict)
     if not cnlp:
         response = {'error': error}
         return jsonify(response)
-    cni, error = check_number_inpatient(observation)
+    cni, error = check_number_inpatient(obs_dict)
     if not cni:
         response = {'error': error}
         return jsonify(response)
