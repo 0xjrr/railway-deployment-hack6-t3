@@ -24,7 +24,7 @@ class Prediction(Model):
     admission_id = IntegerField(unique=True)
     observation = TextField()
     readmitted = TextField()
-    actual_readmitted = TextField()
+    actual_readmitted = TextField(null=True)
 
     class Meta:
         database = DB
