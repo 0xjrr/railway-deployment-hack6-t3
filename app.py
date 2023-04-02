@@ -56,7 +56,7 @@ with open('dtypes.pickle', 'rb') as fh:
 
 def check_number_inpatient(observation):
     n_i = observation.get("number_inpatient")
-    if not n_i:
+    if n_i is None: # if n_i is None
         error = "Field `number_inpatient` missing"
         return False, error
     if not isinstance(n_i, int):
@@ -68,7 +68,7 @@ def check_number_inpatient(observation):
     return True, ""
 def check_num_lab_procedures(observation):
     n_l_p = observation.get("num_lab_procedures")
-    if not n_l_p:
+    if n_l_p is None:
         error = "Field `num_lab_procedures` missing"
         return False, error
     if not isinstance(n_l_p, float):
@@ -80,7 +80,7 @@ def check_num_lab_procedures(observation):
     return True, ""
 def check_time_in_hospital(observation):
     th = observation.get("time_in_hospital")
-    if not th:
+    if th is None:
         error = "Field `time_in_hospital` missing"
         return False, error
     if not isinstance(th, int):
@@ -92,7 +92,7 @@ def check_time_in_hospital(observation):
     return True, ""
 def check_discharge_disposition_code(observation):
     dpc = observation.get("discharge_disposition_code")
-    if not dpc:
+    if dpc is None:
         error = "Field `discharge_disposition_code` missing"
         return False, error
     if not isinstance(dpc, float):
