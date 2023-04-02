@@ -52,6 +52,8 @@ with open('dtypes.pickle', 'rb') as fh:
 ########################################
 
 
+
+
 ########################################
 # Begin webserver stuff
 
@@ -62,19 +64,19 @@ app = Flask(__name__)
 def predict():
     # Flask provides a deserialization convenience function called
     # get_json that will work if the mimetype is application/json.
-    obs_dict = request.get_json()
-    _id = obs_dict['id']
-    observation = obs_dict['observation']
+    obs_dict: dict = request.get_json()
+    _id = obs_dict['admission_id']
+    observation = obs_dict
     # Now do what we already learned in the notebooks about how to transform
     # a single observation into a dataframe that will work with a pipeline.
-    obs = pd.DataFrame([observation], columns=columns).astype(dtypes)
+    obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
     # Now get ourselves an actual prediction of the positive class.
     proba = pipeline.predict_proba(obs)[0, 1]
     response = {'proba': proba}
     p = Prediction(
-        observation_id=_id,
+        admission_id=_id,
         proba=proba,
-        observation=request.data
+        observation=observation
     )
     try:
         p.save()
@@ -90,7 +92,7 @@ def predict():
 def update():
     obs = request.get_json()
     try:
-        p = Prediction.get(Prediction.observation_id == obs['id'])
+        p = Prediction.get(Prediction.admission_id == obs['id'])
         p.true_class = obs['true_class']
         p.save()
         return jsonify(model_to_dict(p))
