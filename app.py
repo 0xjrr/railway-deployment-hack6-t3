@@ -200,7 +200,7 @@ def update():
         model_response_dict["predicted_readmitted"] = model_dict["readmitted"]
         return jsonify(model_response_dict)
     except Prediction.DoesNotExist:
-        error_msg = 'Observation ID: "{}" does not exist'.format(obs['admission_id'])
+        error_msg = 'admission_id: "{}" does not exist'.format(obs['admission_id'])
         return jsonify({'error': error_msg})
 
 
