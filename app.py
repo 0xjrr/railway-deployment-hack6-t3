@@ -22,7 +22,6 @@ DB = connect(os.environ.get('DATABASE_URL') or 'sqlite:///predictions.db')
 
 class Prediction(Model):
     admission_id = IntegerField(unique=True)
-    observation = TextField()
     readmitted = TextField()
     actual_readmitted = TextField()
 
@@ -145,7 +144,6 @@ def predict():
     p = Prediction(
         admission_id=_id,
         readmitted=prediction,
-        observation=observation
     )
     try:
         p.save()
