@@ -140,11 +140,11 @@ def predict():
     obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
     # Now get ourselves an actual prediction of the positive class.
     prediction = pipeline.predict(obs)[0]
-    prediction_value = "Yes" if prediction>=0.5 else "No"
-    response = {'readmitted': prediction_value}
+    # prediction_value = "Yes" if prediction>=0.5 else "No"
+    response = {'readmitted': prediction}
     p = Prediction(
         admission_id=_id,
-        readmitted=prediction_value,
+        readmitted=prediction,
         observation=observation
     )
     try:
@@ -166,7 +166,7 @@ def update():
         p.save()
         return jsonify(model_to_dict(p))
     except Prediction.DoesNotExist:
-        error_msg = 'Observation ID: "{}" does not exist'.format(obs['id'])
+        error_msg = 'Observation ID: "{}" does not exist'.format(obs['admission_id'])
         return jsonify({'error': error_msg})
 
 
