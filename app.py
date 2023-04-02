@@ -56,10 +56,10 @@ with open('dtypes.pickle', 'rb') as fh:
 
 def check_number_inpatient(observation):
     n_i = observation.get("number_inpatient")
-    if not n_i:
+    if n_i is None: # if n_i is None
         error = "Field `number_inpatient` missing"
         return False, error
-    if not isinstance(age, int):
+    if not isinstance(n_i, int):
         error = "Field `number_inpatient` is not an integer"
         return False, error
     if n_i < 0 or n_i > 20:
@@ -68,7 +68,7 @@ def check_number_inpatient(observation):
     return True, ""
 def check_num_lab_procedures(observation):
     n_l_p = observation.get("num_lab_procedures")
-    if not n_l_p:
+    if n_l_p is None:
         error = "Field `num_lab_procedures` missing"
         return False, error
     if not isinstance(n_l_p, float):
@@ -80,7 +80,7 @@ def check_num_lab_procedures(observation):
     return True, ""
 def check_time_in_hospital(observation):
     th = observation.get("time_in_hospital")
-    if not th:
+    if th is None:
         error = "Field `time_in_hospital` missing"
         return False, error
     if not isinstance(th, int):
@@ -92,7 +92,7 @@ def check_time_in_hospital(observation):
     return True, ""
 def check_discharge_disposition_code(observation):
     dpc = observation.get("discharge_disposition_code")
-    if not dpc:
+    if dpc is None:
         error = "Field `discharge_disposition_code` missing"
         return False, error
     if not isinstance(dpc, float):
@@ -133,10 +133,39 @@ def predict():
     # Flask provides a deserialization convenience function called
     # get_json that will work if the mimetype is application/json.
     obs_dict: dict = request.get_json()
+    ########################################
+    # tests
+    categories_ok, error = check_categorical_values(obs_dict)
+    if not categories_ok:
+        response = {'error': error}
+        return jsonify(response)
+    cdp, error = check_discharge_disposition_code(obs_dict)
+    if not cdp:
+        response = {'error': error}
+        return jsonify(response)
+    ctih, error = check_time_in_hospital(obs_dict)
+    if not ctih:
+        response = {'error': error}
+        return jsonify(response)
+    cnlp, error = check_num_lab_procedures(obs_dict)
+    if not cnlp:
+        response = {'error': error}
+        return jsonify(response)
+    cni, error = check_number_inpatient(obs_dict)
+    if not cni:
+        response = {'error': error}
+        return jsonify(response)
+
+
+
+    
+    
+    
     _id = obs_dict['admission_id']
     observation = obs_dict
     # Now do what we already learned in the notebooks about how to transform
     # a single observation into a dataframe that will work with a pipeline.
+    
     obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
     # Now get ourselves an actual prediction of the positive class.
     prediction = pipeline.predict(obs)[0]
