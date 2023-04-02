@@ -54,6 +54,54 @@ with open('dtypes.pickle', 'rb') as fh:
 ########################################
 # Begin Checks
 
+numerical_values_minmax = {'admission_type_code': [
+                                                    1.0,
+                                                    8.0],
+                             'discharge_disposition_code': [
+                                                    1.0,
+                                                    28.0],
+                             'time_in_hospital': [
+                                                    1,
+                                                    14],
+                             'num_lab_procedures': [
+                                                    1.0,
+                                                    132.0],
+                             'num_procedures': [
+                                                    0,
+                                                    6],
+                             'num_medications': [
+                                                    1.0,
+                                                    70.0],
+                             'number_outpatient': [
+                                                    0,
+                                                    35],
+                             'number_emergency': [
+                                                    0,
+                                                    22],
+                             'number_inpatient': [
+                                                    0,
+                                                    18],
+                             'number_diagnoses': [
+                                                    1,
+                                                    16],
+                             'hemoglobin_level': [
+                                                    10.9,
+                                                    18.1]}
+
+def check_categorical_values(observation):
+    numerical_features = ['time_in_hospital','number_inpatient','discharge_disposition_code','number_diagnoses','num_medications','num_procedures','number_emergency','number_outpatient','hemoglobin_level','num_lab_procedures',"admission_type_code"]
+    for s in numerical_features :
+        th = observation.get(s)
+        if th is None:
+            error = "Fieldmissing"
+            return False, error
+        if th < 0 :
+            error = "Field is not between 0 and 20"
+            return False, error
+    
+    return True, ""
+
+
 def check_number_inpatient(observation):
     n_i = observation.get("number_inpatient")
     if n_i is None: # if n_i is None
@@ -105,7 +153,12 @@ def check_discharge_disposition_code(observation):
 def check_categorical_values(observation):
     valid_category_map = {
         "blood_type": ['A-', 'O+', 'A+', 'B+', 'O-', 'AB-', 'AB+', 'B-'],
-        "insulin": ['Yes', 'No']
+        "insulin": ['Yes', 'No'],
+        "age" : ['[80-90)', '[40-50)', '[30-40)', '[70-80)', '[90-100)', '[50-60)','[60-70)', '[20-30)', '[10-20)', '[0-10)'],
+        "gender" : ['Male', 'Female', 'Unknown/Invalid'],
+        "race" : ['Caucasian', 'European', 'AfricanAmerican', 'Other', 'Asian','Black', 'Hispanic', 'Latino'],
+        "diabetesMed": ['Yes', 'No'],
+        "complete_vaccination_status": ['Complete', 'Incomplete', 'None']
     }
     for key, valid_categories in valid_category_map.items():
         if key in observation:
@@ -135,41 +188,73 @@ def predict():
     obs_dict: dict = request.get_json()
     ########################################
     # tests
-    categories_ok, error = check_categorical_values(obs_dict)
-    if not categories_ok:
-        response = {'error': error}
-        return jsonify(response)
-    cdp, error = check_discharge_disposition_code(obs_dict)
-    if not cdp:
-        response = {'error': error}
-        return jsonify(response)
-    ctih, error = check_time_in_hospital(obs_dict)
-    if not ctih:
-        response = {'error': error}
-        return jsonify(response)
-    cnlp, error = check_num_lab_procedures(obs_dict)
-    if not cnlp:
-        response = {'error': error}
-        return jsonify(response)
-    cni, error = check_number_inpatient(obs_dict)
-    if not cni:
-        response = {'error': error}
-        return jsonify(response)
+    try:
+        obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
+
+        df_clean = obs.copy()
+        df_clean['race'] = df_clean['race'].replace(['AFRICANAMERICAN', 'Afro American','African American'], 'AfricanAmerican')
+        df_clean['race'] = df_clean['race'].replace(['EURO'], 'European')
+        df_clean['race'] = df_clean['race'].replace(['WHITE', 'White'], 'Caucasian')
+        df_clean['max_glu_serum'] = df_clean['max_glu_serum'].replace(['NONE'], 'None')
+        df_clean['max_glu_serum'] = df_clean['max_glu_serum'].replace(['NORM'], 'Norm')
+        df_clean['change'] = df_clean['change'].replace(['Ch'], 'Yes')
+        df_clean['weight'] = df_clean['weight'].fillna('?')
+        df_clean['age'] = df_clean['age'].fillna('?')
+
+
+
+        _id = obs_dict['admission_id']
+        observation = obs_dict
+    except:
+        categories_ok, error = check_categorical_values(obs_dict)
+        if not categories_ok:
+            response = {'error': error}
+            return jsonify(response)
+        cdp, error = check_discharge_disposition_code(obs_dict)
+        if not cdp:
+            response = {'error': error}
+            return jsonify(response)
+        ctih, error = check_time_in_hospital(obs_dict)
+        if not ctih:
+            response = {'error': error}
+            return jsonify(response)
+        cnlp, error = check_num_lab_procedures(obs_dict)
+        if not cnlp:
+            response = {'error': error}
+            return jsonify(response)
+        cni, error = check_number_inpatient(obs_dict)
+        if not cni:
+            response = {'error': error}
+            return jsonify(response)
+        
+        _id = obs_dict['admission_id']
+        observation = obs_dict
+        
+        obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
+        df_clean = obs.copy()
+        df_clean['race'] = df_clean['race'].replace(['AFRICANAMERICAN', 'Afro American','African American'], 'AfricanAmerican')
+        df_clean['race'] = df_clean['race'].replace(['EURO'], 'European')
+        df_clean['race'] = df_clean['race'].replace(['WHITE', 'White'], 'Caucasian')
+        df_clean['max_glu_serum'] = df_clean['max_glu_serum'].replace(['NONE'], 'None')
+        df_clean['max_glu_serum'] = df_clean['max_glu_serum'].replace(['NORM'], 'Norm')
+        df_clean['change'] = df_clean['change'].replace(['Ch'], 'Yes')
+        df_clean['weight'] = df_clean['weight'].fillna('?')
+        df_clean['age'] = df_clean['age'].fillna('?')
 
 
 
     
     
     
-    _id = obs_dict['admission_id']
-    observation = obs_dict
     # Now do what we already learned in the notebooks about how to transform
     # a single observation into a dataframe that will work with a pipeline.
     
-    obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
+    
     # Now get ourselves an actual prediction of the positive class.
-    prediction = pipeline.predict(obs)[0]
-    # prediction_value = "Yes" if prediction>=0.5 else "No"
+    # prediction = pipeline.predict(df_clean)[0]
+    y_pred_proba = pipeline.predict_proba(df_clean)[0,1]
+    prediction_value = "Yes" if y_pred_proba>=0.47 else "No"
+    prediction = prediction_value
     response = {'readmitted': prediction}
     p = Prediction(
         admission_id=_id,
