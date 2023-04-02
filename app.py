@@ -59,7 +59,7 @@ def check_number_inpatient(observation):
     if not n_i:
         error = "Field `number_inpatient` missing"
         return False, error
-    if not isinstance(age, int):
+    if not isinstance(n_i, int):
         error = "Field `number_inpatient` is not an integer"
         return False, error
     if n_i < 0 or n_i > 20:
@@ -133,10 +133,39 @@ def predict():
     # Flask provides a deserialization convenience function called
     # get_json that will work if the mimetype is application/json.
     obs_dict: dict = request.get_json()
+    ########################################
+    # tests
+    categories_ok, error = check_categorical_values(observation)
+    if not categories_ok:
+        response = {'error': error}
+        return jsonify(response)
+    cdp, error = check_discharge_disposition_code(observation)
+    if not cdp:
+        response = {'error': error}
+        return jsonify(response)
+    ctih, error = check_time_in_hospital(observation)
+    if not ctih:
+        response = {'error': error}
+        return jsonify(response)
+    cnlp, error = check_num_lab_procedures(observation)
+    if not cnlp:
+        response = {'error': error}
+        return jsonify(response)
+    cni, error = check_number_inpatient(observation)
+    if not cni:
+        response = {'error': error}
+        return jsonify(response)
+
+
+
+    
+    
+    
     _id = obs_dict['admission_id']
     observation = obs_dict
     # Now do what we already learned in the notebooks about how to transform
     # a single observation into a dataframe that will work with a pipeline.
+    
     obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
     # Now get ourselves an actual prediction of the positive class.
     prediction = pipeline.predict(obs)[0]
