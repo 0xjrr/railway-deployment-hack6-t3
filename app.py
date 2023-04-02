@@ -23,8 +23,8 @@ DB = connect(os.environ.get('DATABASE_URL') or 'sqlite:///predictions.db')
 class Prediction(Model):
     admission_id = IntegerField(unique=True)
     observation = TextField()
-    proba = FloatField()
-    true_class = IntegerField(null=True)
+    readmitted = TextField()
+    actual_readmitted = TextField()(null=True)
 
     class Meta:
         database = DB
@@ -51,8 +51,76 @@ with open('dtypes.pickle', 'rb') as fh:
 # End model un-pickling
 ########################################
 
+########################################
+# Begin Checks
 
+def check_number_inpatient(observation):
+    n_i = observation.get("number_inpatient")
+    if not n_i:
+        error = "Field `number_inpatient` missing"
+        return False, error
+    if not isinstance(age, int):
+        error = "Field `number_inpatient` is not an integer"
+        return False, error
+    if n_i < 0 or n_i > 20:
+        error = "Field `number_inpatient` is not between 0 and 20"
+        return False, error
+    return True, ""
+def check_num_lab_procedures(observation):
+    n_l_p = observation.get("num_lab_procedures")
+    if not n_l_p:
+        error = "Field `num_lab_procedures` missing"
+        return False, error
+    if not isinstance(n_l_p, float):
+        error = "Field `num_lab_procedures` is not an integer"
+        return False, error
+    if n_l_p < 1 or n_l_p > 150:
+        error = "Field `num_lab_procedures` is not between 0 and 150"
+        return False, error
+    return True, ""
+def check_time_in_hospital(observation):
+    th = observation.get("time_in_hospital")
+    if not th:
+        error = "Field `time_in_hospital` missing"
+        return False, error
+    if not isinstance(th, int):
+        error = "Field `time_in_hospital` is not an integer"
+        return False, error
+    if th < 1 or th > 20:
+        error = "Field `time_in_hospital` is not between 0 and 20"
+        return False, error
+    return True, ""
+def check_discharge_disposition_code(observation):
+    dpc = observation.get("discharge_disposition_code")
+    if not dpc:
+        error = "Field `discharge_disposition_code` missing"
+        return False, error
+    if not isinstance(dpc, float):
+        error = "Field `discharge_disposition_code` is not an integer"
+        return False, error
+    if dpc < 1 or dpc > 30:
+        error = "Field `discharge_disposition_code` is not between 0 and 30"
+        return False, error
+    return True, ""
+def check_categorical_values(observation):
+    valid_category_map = {
+        "blood_type": ['A-', 'O+', 'A+', 'B+', 'O-', 'AB-', 'AB+', 'B-'],
+        "insulin": ['Yes', 'No']
+    }
+    for key, valid_categories in valid_category_map.items():
+        if key in observation:
+            value = observation[key]
+            if value not in valid_categories:
+                error = "Invalid value provided for {}: {}. Allowed values are: {}".format(
+                    key, value, ",".join(["'{}'".format(v) for v in valid_categories]))
+                return False, error
+        else:
+            error = "Categorical field {} missing"
+            return False, error
+    return True, ""
 
+# End Checks
+########################################
 
 ########################################
 # Begin webserver stuff
@@ -71,11 +139,12 @@ def predict():
     # a single observation into a dataframe that will work with a pipeline.
     obs = pd.DataFrame([observation], columns=observation.keys())[columns].astype(dtypes)
     # Now get ourselves an actual prediction of the positive class.
-    proba = pipeline.predict_proba(obs)[0, 1]
-    response = {'proba': proba}
+    prediction = pipeline.predict(obs)[0]
+    prediction_value = "Yes" if prediction>=0.5 else "No"
+    response = {'readmitted': prediction_value}
     p = Prediction(
         admission_id=_id,
-        proba=proba,
+        readmitted=prediction_value,
         observation=observation
     )
     try:
@@ -92,8 +161,8 @@ def predict():
 def update():
     obs = request.get_json()
     try:
-        p = Prediction.get(Prediction.admission_id == obs['id'])
-        p.true_class = obs['true_class']
+        p = Prediction.get(Prediction.admission_id == obs['admission_id'])
+        p.actual_readmitted = obs['readmitted']
         p.save()
         return jsonify(model_to_dict(p))
     except Prediction.DoesNotExist:
